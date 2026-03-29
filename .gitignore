@@ -1,0 +1,229 @@
+# PyroVeil Project - Git Ignore Configuration
+# This file specifies intentionally untracked files that Git should ignore
+
+# ============================================================================
+# Build Artifacts
+# ============================================================================
+
+# CMake build directories
+build/
+build-*/
+cmake-build-*/
+
+# CMake cache and generated files
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+cmake_install.cmake
+install_manifest.txt
+*.cmake.in
+
+# Ninja build files
+.ninja_deps
+.ninja_log
+rules.ninja
+build.ninja
+
+# Make build files
+Makefile
+
+# Compiled libraries and executables
+*.so
+*.so.*
+*.a
+*.o
+*.obj
+*.dll
+*.dylib
+*.exe
+
+# Layer artifacts
+libVkLayer_pyroveil*.so
+VkLayer_pyroveil*.json
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# CLion / IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Qt Creator
+*.user
+*.autosave
+CMakeLists.txt.user*
+
+# Vim
+*.swp
+*.swo
+*~
+.*.sw?
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# Operating System Files
+# ============================================================================
+
+# Linux
+.directory
+.Trash-*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE_BIN/
+
+# ============================================================================
+# Package Management
+# ============================================================================
+
+# Conan
+conaninfo.txt
+conanbuildinfo.*
+conan.lock
+
+# vcpkg
+vcpkg_installed/
+
+# ============================================================================
+# Development and Testing
+# ============================================================================
+
+# Test outputs
+Testing/
+test_results/
+*.gcda
+*.gcno
+*.gcov
+
+# Profiling
+*.prof
+gmon.out
+callgrind.out.*
+perf.data*
+
+# Valgrind
+vgcore.*
+*.memcheck
+
+# Sanitizer outputs
+*.asan
+*.tsan
+*.ubsan
+
+# ============================================================================
+# Documentation
+# ============================================================================
+
+# Doxygen output
+docs/html/
+docs/latex/
+docs/man/
+Doxyfile.bak
+
+# Sphinx
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# ============================================================================
+# Temporary and Backup Files
+# ============================================================================
+
+# Generic temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+
+# Logs
+*.log
+logs/
+
+# Archives (generated during release)
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.7z
+
+# Release directories
+release-*/
+RELEASE_NOTES_*.md
+
+# ============================================================================
+# Python (for build scripts)
+# ============================================================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+dist/
+.eggs/
+
+# ============================================================================
+# Shader Cache (runtime generated)
+# ============================================================================
+
+# PyroVeil shader caches
+hacks/*/cache/
+*.cache
+shader_cache/
+
+# Fossilize caches
+*.foz
+
+# ============================================================================
+# Installation Test Directories
+# ============================================================================
+
+install-test/
+prefix/
+staging/
+
+# ============================================================================
+# CI/CD Artifacts
+# ============================================================================
+
+build-ci/
+.coverage
+coverage.xml
+htmlcov/
+
+# ============================================================================
+# Local Configuration Files
+# ============================================================================
+
+# User-specific settings (do not commit)
+.env
+.env.local
+local.properties
+
+# Custom build configurations
+build_config_local.sh
