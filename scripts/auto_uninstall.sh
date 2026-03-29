@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Pyroveil Universal Uninstaller Script
 # Removes all traces of Pyroveil from the user environment, including binaries, configuration, and environment variables.
 set -Eeuo pipefail

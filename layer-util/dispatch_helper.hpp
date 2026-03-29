@@ -38,6 +38,9 @@
 // Isolate to just what we need. Should improve layer init time.
 
 // Instance function pointer dispatch table
+/// Contains pointers to Vulkan instance-level functions that the layer needs to hook.
+/// These functions are obtained from the Vulkan loader and called to access the
+/// underlying driver implementation.
 struct VkLayerInstanceDispatchTable
 {
 	PFN_vkDestroyInstance DestroyInstance;
@@ -48,16 +51,18 @@ struct VkLayerInstanceDispatchTable
 };
 
 // Device function pointer dispatch table
+/// Contains pointers to Vulkan device-level functions that the layer needs to hook.
+/// These are device-specific function pointers obtained from vkGetDeviceProcAddr.
 struct VkLayerDispatchTable
 {
 	PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
 	PFN_vkDestroyDevice DestroyDevice;
-	PFN_vkCreateShaderModule CreateShaderModule;
+	PFN_vkCreateShaderModule CreateShaderModule;                ///< Intercept shader creation
 	PFN_vkDestroyShaderModule DestroyShaderModule;
 	PFN_vkCreateShadersEXT CreateShadersEXT;
-	PFN_vkCreateGraphicsPipelines CreateGraphicsPipelines;
-	PFN_vkCreateComputePipelines CreateComputePipelines;
-	PFN_vkCreateRayTracingPipelinesKHR CreateRayTracingPipelinesKHR;
+	PFN_vkCreateGraphicsPipelines CreateGraphicsPipelines;      ///< Intercept pipeline creation
+	PFN_vkCreateComputePipelines CreateComputePipelines;        ///< Intercept compute pipeline creation
+	PFN_vkCreateRayTracingPipelinesKHR CreateRayTracingPipelinesKHR; ///< Intercept ray-tracing pipelines
 };
 
 static inline VkLayerInstanceCreateInfo *getChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func)

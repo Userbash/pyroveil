@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# install-pyroveil.sh - Универсальный установщик PyroVeil
-# Поддержка: Bazzite, Fedora Silverblue/Kinoite, Arch Linux, Generic Linux
+# install-pyroveil.sh - Universal PyroVeil Installer
+# Supported systems: Bazzite, Fedora Silverblue/Kinoite, Arch Linux, Generic Linux
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ REPO_URL="https://github.com/HansKristian-Work/pyroveil.git"
 PREFIX="${PREFIX:-$HOME/.local}"
 SRC_DIR="${SRC_DIR:-$HOME/.pyroveil-build}"
 
-# Цвета
+# Terminal colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -29,7 +29,7 @@ die() {
     exit 1
 }
 
-# Определение типа системы
+# Detect system type (immutable vs. standard Linux distributions)
 detect_system() {
     local system="unknown"
     
@@ -56,7 +56,7 @@ detect_system() {
     echo "$system"
 }
 
-# Проверка зависимостей
+# Check and install required build dependencies for the detected system
 check_dependencies() {
     local system=$1
     local missing_deps=()
@@ -64,8 +64,8 @@ check_dependencies() {
     case "$system" in
         immutable-fedora|bazzite)
             if ! command -v distrobox &>/dev/null; then
-                error "Distrobox не установлен!"
-                error "Установите: rpm-ostree install distrobox && systemctl reboot"
+                error "Distrobox is not installed!"
+                error "Install it: rpm-ostree install distrobox && systemctl reboot"
                 return 1
             fi
             ;;
@@ -77,9 +77,9 @@ check_dependencies() {
             done
             
             if [[ ${#missing_deps[@]} -gt 0 ]]; then
-                warn "Отсутствуют зависимости: ${missing_deps[*]}"
-                warn "Установка зависимостей..."
-                sudo pacman -S --needed --noconfirm git cmake ninja gcc || die "Не удалось установить зависимости"
+                warn "Missing dependencies: ${missing_deps[*]}"
+                warn "Installing dependencies..."
+                sudo pacman -S --needed --noconfirm git cmake ninja gcc || die "Failed to install dependencies"
             fi
             ;;
         fedora)
@@ -90,9 +90,9 @@ check_dependencies() {
             done
             
             if [[ ${#missing_deps[@]} -gt 0 ]]; then
-                warn "Отсутствуют зависимости: ${missing_deps[*]}"
-                warn "Установка зависимостей..."
-                sudo dnf install -y git cmake ninja-build gcc-c++ || die "Не удалось установить зависимости"
+                warn "Missing dependencies: ${missing_deps[*]}"
+                warn "Installing dependencies..."
+                sudo dnf install -y git cmake ninja-build gcc-c++ || die "Failed to install dependencies"
             fi
             ;;
         debian)
@@ -103,10 +103,10 @@ check_dependencies() {
             done
             
             if [[ ${#missing_deps[@]} -gt 0 ]]; then
-                warn "Отсутствуют зависимости: ${missing_deps[*]}"
-                warn "Установка зависимостей..."
+                warn "Missing dependencies: ${missing_deps[*]}"
+                warn "Installing dependencies..."
                 sudo apt-get update && sudo apt-get install -y git cmake ninja-build g++ || \
-                    die "Не удалось установить зависимости"
+                    die "Failed to install dependencies"
             fi
             ;;
     esac
@@ -114,119 +114,119 @@ check_dependencies() {
     return 0
 }
 
-# Установка на иммутабельных системах (через distrobox)
+# Install on immutable systems using distrobox container
 install_immutable() {
-    header "Установка PyroVeil на иммутабельную систему через Distrobox"
+    header "Installing PyroVeil on immutable system via Distrobox"
     
     local container_name="pyroveil-build"
     local image="fedora:latest"
     
-    # Проверка существования контейнера
+    # Check if container already exists
     if distrobox list | grep -q "^${container_name}"; then
-        log "Контейнер $container_name уже существует, используем его"
+        log "Container $container_name already exists, reusing it"
     else
-        log "Создание контейнера $container_name..."
-        distrobox create -n "$container_name" -i "$image" || die "Не удалось создать контейнер"
+        log "Creating container $container_name..."
+        distrobox create -n "$container_name" -i "$image" || die "Failed to create container"
     fi
     
-    log "Подготовка сборочной среды в контейнере..."
+    log "Preparing build environment in container..."
     
-    # Сборка в контейнере
+    # Build inside the container
     distrobox enter "$container_name" -- bash -c "
         set -euo pipefail
         
-        # Установка зависимостей
-        echo 'Установка зависимостей...'
+        # Install dependencies
+        echo 'Installing dependencies...'
         sudo dnf install -y git cmake ninja-build gcc-c++ || exit 1
         
-        # Клонирование репозитория
+        # Clone repository
         if [[ -d /tmp/pyroveil ]]; then
             rm -rf /tmp/pyroveil
         fi
         
-        echo 'Клонирование PyroVeil...'
+        echo 'Cloning PyroVeil repository...'
         git clone --depth 1 '$REPO_URL' /tmp/pyroveil || exit 1
         cd /tmp/pyroveil
         
-        echo 'Инициализация субмодулей...'
+        echo 'Initializing submodules...'
         git submodule update --init --recursive || exit 1
         
-        echo 'Конфигурация CMake...'
+        echo 'Configuring CMake...'
         cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX='$PREFIX' || exit 1
         
-        echo 'Сборка...'
+        echo 'Building...'
         ninja -C build || exit 1
         
-        echo 'Установка...'
+        echo 'Installing...'
         ninja -C build install || exit 1
         
-        # Копирование базы данных и конфигов
-        echo 'Установка базы данных и конфигов...'
+        # Copy database and configs
+        echo 'Installing database and game configs...'
         mkdir -p '$PREFIX/share/pyroveil/hacks'
         cp -r hacks/* '$PREFIX/share/pyroveil/hacks/' || true
         cp database.json '$PREFIX/share/pyroveil/' 2>/dev/null || true
         
-        echo 'Сборка завершена успешно!'
-    " || die "Сборка в контейнере не удалась"
+        echo 'Build completed successfully!'
+    " || die "Container build failed"
     
-    success "Сборка в контейнере завершена"
+    success "Container build completed"
 }
 
-# Установка на обычных системах
+# Install on standard Linux systems (native build)
 install_native() {
-    header "Установка PyroVeil (нативная сборка)"
+    header "Installing PyroVeil (native build)"
     
-    # Очистка старой директории сборки
+    # Clean old build directory
     if [[ -d "$SRC_DIR" ]]; then
-        log "Удаление старой директории сборки..."
+        log "Removing old build directory..."
         rm -rf "$SRC_DIR"
     fi
     
-    # Клонирование
-    log "Клонирование репозитория из $REPO_URL..."
-    git clone --depth 1 "$REPO_URL" "$SRC_DIR" || die "Не удалось клонировать репозиторий"
+    # Clone repository
+    log "Cloning repository from $REPO_URL..."
+    git clone --depth 1 "$REPO_URL" "$SRC_DIR" || die "Failed to clone repository"
     
     cd "$SRC_DIR"
     
-    # Инициализация субмодулей
-    log "Инициализация субмодулей..."
-    git submodule update --init --recursive || die "Не удалось обновить субмодули"
+    # Initialize submodules
+    log "Initializing submodules..."
+    git submodule update --init --recursive || die "Failed to update submodules"
     
-    # Конфигурация
-    log "Конфигурация CMake..."
+    # Configure
+    log "Configuring CMake..."
     cmake -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX="$PREFIX" || die "Не удалось сконфигурировать проект"
+        -DCMAKE_INSTALL_PREFIX="$PREFIX" || die "Failed to configure project"
     
-    # Сборка
-    log "Сборка (может занять несколько минут)..."
-    ninja -C build || die "Сборка не удалась"
+    # Build
+    log "Building (this may take several minutes)..."
+    ninja -C build || die "Build failed"
     
-    # Установка
-    log "Установка в $PREFIX..."
-    ninja -C build install || die "Установка не удалась"
+    # Install
+    log "Installing to $PREFIX..."
+    ninja -C build install || die "Installation failed"
     
-    # Копирование дополнительных файлов
-    log "Установка конфигов и базы данных..."
+    # Copy additional files
+    log "Installing configs and database..."
     mkdir -p "$PREFIX/share/pyroveil/hacks"
     cp -r hacks/* "$PREFIX/share/pyroveil/hacks/" 2>/dev/null || true
     cp database.json "$PREFIX/share/pyroveil/" 2>/dev/null || true
     
-    success "Сборка и установка завершены"
+    success "Build and installation completed"
 }
 
-# Постустановочная конфигурация
+# Post-installation configuration
 post_install() {
-    header "Постустановочная конфигурация"
+    header "Post-installation configuration"
     
     local layer_path="$PREFIX/share/vulkan/implicit_layer.d"
     local bashrc="$HOME/.bashrc"
     local profile="$HOME/.profile"
     
-    # Настройка VK_LAYER_PATH
-    log "Настройка переменных окружения..."
+    # Configure VK_LAYER_PATH environment variable
+    log "Configuring environment variables..."
     
     local env_line="export VK_LAYER_PATH=\"$layer_path:\${VK_LAYER_PATH:-}\""
     
@@ -234,127 +234,127 @@ post_install() {
         echo "" >> "$bashrc"
         echo "# PyroVeil Vulkan Layer" >> "$bashrc"
         echo "$env_line" >> "$bashrc"
-        success "VK_LAYER_PATH добавлен в $bashrc"
+        success "VK_LAYER_PATH added to $bashrc"
     else
-        log "VK_LAYER_PATH уже установлен в $bashrc"
+        log "VK_LAYER_PATH already set in $bashrc"
     fi
     
     if [[ -f "$profile" ]] && ! grep -qF "VK_LAYER_PATH" "$profile" 2>/dev/null; then
         echo "" >> "$profile"
         echo "# PyroVeil Vulkan Layer" >> "$profile"
         echo "$env_line" >> "$profile"
-        success "VK_LAYER_PATH добавлен в $profile"
+        success "VK_LAYER_PATH added to $profile"
     fi
     
-    # Экспорт для текущей сессии
+    # Export for current session
     export VK_LAYER_PATH="$layer_path${VK_LAYER_PATH:+:$VK_LAYER_PATH}"
     
-    # Копирование скриптов
-    log "Установка утилит..."
+    # Install utility scripts
+    log "Installing utilities..."
     
     local bin_dir="$PREFIX/bin"
     mkdir -p "$bin_dir"
     
-    # Копируем скрипты автоматизации
+    # Copy automation scripts
     if [[ -f "$SRC_DIR/scripts/pyroveil-auto-detect.sh" ]]; then
         cp "$SRC_DIR/scripts/pyroveil-auto-detect.sh" "$bin_dir/pyroveil-auto-detect"
         chmod +x "$bin_dir/pyroveil-auto-detect"
     fi
     
-    # Проверка установки jq
+    # Check if jq is installed
     if ! command -v jq &>/dev/null; then
-        warn "jq не установлен - автоопределение игр работать не будет"
-        warn "Установите: sudo pacman -S jq (Arch) или sudo dnf install jq (Fedora)"
+        warn "jq is not installed - game auto-detection will not work"
+        warn "Install it: sudo pacman -S jq (Arch) or sudo dnf install jq (Fedora)"
     fi
     
-    # Проверка файлов
+    # Verify layer files
     local so_file="$PREFIX/lib/libVkLayer_pyroveil_64.so"
     local json_file="$layer_path/VkLayer_pyroveil_64.json"
     
     if [[ -f "$so_file" ]] && [[ -f "$json_file" ]]; then
-        success "Файлы слоя установлены корректно:"
+        success "Layer files installed correctly:"
         log "  - $so_file"
         log "  - $json_file"
     else
-        error "Файлы слоя не найдены!"
-        [[ ! -f "$so_file" ]] && error "  Отсутствует: $so_file"
-        [[ ! -f "$json_file" ]] && error "  Отсутствует: $json_file"
+        error "Layer files not found!"
+        [[ ! -f "$so_file" ]] && error "  Missing: $so_file"
+        [[ ! -f "$json_file" ]] && error "  Missing: $json_file"
         return 1
     fi
     
-    # Вывод информации о поддерживаемых играх
+    # Display supported games information
     local db_file="$PREFIX/share/pyroveil/database.json"
     if [[ -f "$db_file" ]] && command -v jq &>/dev/null; then
         echo ""
-        header "Поддерживаемые игры:"
+        header "Supported games:"
         jq -r '.games[] | "  ✓ \(.name) (AppID: \(.steam_appid // "N/A"))"' "$db_file"
     fi
     
     return 0
 }
 
-# Вывод финальной информации
+# Display final installation information and next steps
 print_final_info() {
     echo ""
     header "╔════════════════════════════════════════════════════════╗"
-    header "║       PyroVeil успешно установлен! 🎉                 ║"
+    header "║       PyroVeil installed successfully! 🎉             ║"
     header "╚════════════════════════════════════════════════════════╝"
     echo ""
     
-    success "Следующие шаги:"
+    success "Next steps:"
     echo ""
-    echo "  1. Перезапустите терминал или выполните:"
+    echo "  1. Restart your terminal or run:"
     echo "     ${CYAN}source ~/.bashrc${NC}"
     echo ""
-    echo "  2. Для автоматической работы добавьте в Steam launch options:"
+    echo "  2. For automatic operation, add to Steam launch options:"
     echo "     ${CYAN}PYROVEIL=1 %command%${NC}"
     echo ""
-    echo "  3. PyroVeil автоматически определит игру и применит нужный конфиг"
+    echo "  3. PyroVeil will automatically detect your game and apply the correct config"
     echo ""
-    echo "  4. Для ручной настройки конкретной игры:"
+    echo "  4. To manually configure a specific game:"
     echo "     ${CYAN}pyroveil-auto-detect check <steam_appid>${NC}"
     echo ""
-    echo "  5. Список поддерживаемых игр:"
+    echo "  5. List supported games:"
     echo "     ${CYAN}pyroveil-auto-detect list${NC}"
     echo ""
     
     if ! command -v jq &>/dev/null; then
-        warn "⚠️  Для автоопределения игр требуется установить jq:"
+        warn "⚠️  Game auto-detection requires jq to be installed:"
         warn "   Arch:   sudo pacman -S jq"
         warn "   Fedora: sudo dnf install jq"
     fi
     
     echo ""
-    log "Установка завершена в: $PREFIX"
-    log "База данных игр: $PREFIX/share/pyroveil/database.json"
-    log "Конфиги игр: $PREFIX/share/pyroveil/hacks/"
+    log "Installation completed in: $PREFIX"
+    log "Game database: $PREFIX/share/pyroveil/database.json"
+    log "Game configs: $PREFIX/share/pyroveil/hacks/"
     echo ""
 }
 
-# Главная функция установки
+# Main installation function
 main() {
     header "╔════════════════════════════════════════════════════════╗"
     header "║  PyroVeil Universal Installer v${VERSION}              ║"
-    header "║  Поддержка Vulkan слоев для NVIDIA                    ║"
+    header "║  Vulkan layer support for NVIDIA                      ║"
     header "╚════════════════════════════════════════════════════════╝"
     echo ""
     
-    # Проверка прав (не должен быть root)
+    # Check permissions (must not be root)
     if [[ $EUID -eq 0 ]]; then
-        die "Не запускайте этот скрипт от root! Используйте обычного пользователя."
+        die "Do not run this script as root! Use a regular user account."
     fi
     
-    # Определение системы
+    # Detect system type
     local system=$(detect_system)
-    log "Обнаружена система: ${BOLD}$system${NC}"
+    log "Detected system: ${BOLD}$system${NC}"
     echo ""
     
-    # Проверка зависимостей
-    log "Проверка зависимостей..."
-    check_dependencies "$system" || die "Не удалось проверить/установить зависимости"
+    # Check dependencies
+    log "Checking dependencies..."
+    check_dependencies "$system" || die "Failed to check/install dependencies"
     echo ""
     
-    # Установка в зависимости от типа системы
+    # Install based on system type
     case "$system" in
         immutable-fedora|bazzite)
             install_immutable
@@ -366,12 +366,12 @@ main() {
     
     echo ""
     
-    # Постустановочная конфигурация
-    post_install || die "Постустановочная конфигурация не удалась"
+    # Post-installation configuration
+    post_install || die "Post-installation configuration failed"
     
-    # Финальная информация
+    # Display final information
     print_final_info
 }
 
-# Запуск
+# Execute installer
 main "$@"

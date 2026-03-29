@@ -26,17 +26,48 @@
 
 namespace Path
 {
+/// Join base directory with a relative path
+/// Example: join("/home/user", "file.txt") -> "/home/user/file.txt"
 std::string join(const std::string &base, const std::string &path);
+
+/// Get the directory component of a path
+/// Example: basedir("/home/user/file.txt") -> "/home/user"
 std::string basedir(const std::string &path);
+
+/// Get the filename component of a path
+/// Example: basename("/home/user/file.txt") -> "file.txt"
 std::string basename(const std::string &path);
+
+/// Split path into directory and filename components
+/// Example: split("/home/user/file.txt") -> {"/home/user", "file.txt"}
 std::pair<std::string, std::string> split(const std::string &path);
+
+/// Convert an absolute path to a path relative to base directory
+/// Example: relpath("/home/user", "/home/user/files/data.txt") -> "files/data.txt"
 std::string relpath(const std::string &base, const std::string &path);
+
+/// Get file extension from a path
+/// Example: ext("/home/user/file.txt") -> ".txt"
 std::string ext(const std::string &path);
+
+/// Split path into protocol and path components
+/// Example: protocol_split("file:///home/user") -> {"file", "/home/user"}
 std::pair<std::string, std::string> protocol_split(const std::string &path);
+
+/// Check if path is absolute (starts with / on Unix)
 bool is_abspath(const std::string &path);
+
+/// Check if path is root directory
 bool is_root_path(const std::string &path);
+
+/// Canonicalize path by removing . and .. components
+/// Example: canonicalize_path("/home/./user/../user/file.txt") -> "/home/user/file.txt"
 std::string canonicalize_path(const std::string &path);
+
+/// Ensure path has protocol prefix if required
 std::string enforce_protocol(const std::string &path);
+
+/// Get absolute path of currently running executable
 std::string get_executable_path();
 
 #ifdef _WIN32

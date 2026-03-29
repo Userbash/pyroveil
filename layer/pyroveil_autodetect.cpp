@@ -10,13 +10,19 @@
  * 
  * Detection Priority (highest to lowest):
  * 1. PYROVEIL_CONFIG environment variable (user override)
- * 2. Steam AppID (from SteamAppId, STEAM_COMPAT_APP_ID environment variables)
+ * 2. Steam AppID (from SteamAppId, STEAM_COMPAT_APP_ID, PRESSURE_VESSEL_APP_ID, etc.)
  * 3. Process name (from /proc/self/comm)
  * 4. Executable path (from /proc/self/exe)
+ * 5. Steam ACF file scanning (libraryfolders.vdf + appmanifest_*.acf)
  * 
  * The module uses a JSON database (database.json) that maps game identifiers
  * to their corresponding PyroVeil configuration files. If the database is not
  * found, it falls back to a hardcoded list of known games.
+ * 
+ * Flatpak Steam Support:
+ * - PRESSURE_VESSEL_APP_ID detection
+ * - STEAM_RUNTIME_CONTAINER_APP_ID support
+ * - Flatpak-specific paths (~/.var/app/com.valvesoftware.Steam/)
  * 
  * Integration:
  * - Add this file to layer/CMakeLists.txt
@@ -26,6 +32,9 @@
 
 #include "pyroveil_autodetect.hpp"
 #include "path_utils.hpp"
+
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 #include <stdlib.h>     // getenv()
 #include <unistd.h>     // readlink(), access(), getppid()
@@ -60,19 +69,31 @@ struct GameInfo {
 };
 
 /**
- * @brief Simple JSON parser for database.json
+ * @brief Simple JSON parser for database.json using RapidJSON
  * 
- * This is a lightweight parser specifically designed for our database format.
- * For production use, consider integrating RapidJSON which is already available
- * in the project dependencies.
+ * Parses the PyroVeil game database using the RapidJSON library.
+ * This replaces the previous placeholder implementation with a full-featured
+ * JSON parser that handles all database fields.
  * 
- * @note This is a simplified implementation. In production, use RapidJSON
- *       which is already available in third_party/rapidjson/
+ * Database Format:
+ * {
+ *   "games": {
+ *     "APPID": {
+ *       "name": "Game Name",
+ *       "config": "path/to/config.json",
+ *       "steam_appid": "APPID",
+ *       "process_names": ["exe1", "exe2"],
+ *       "required": true|false,
+ *       "severity": "critical|high|medium|low",
+ *       "description": "Fix description"
+ *     }
+ *   }
+ * }
  */
 class SimpleJsonParser {
 public:
     /**
-     * @brief Parse database.json file
+     * @brief Parse database.json file using RapidJSON
      * 
      * @param jsonPath Absolute path to database.json
      * @return Map of Steam AppID to GameInfo structures
@@ -94,20 +115,95 @@ public:
         std::stringstream buffer;
         buffer << file.rdbuf();
         std::string content = buffer.str();
+        file.close();
         
-        // TODO: Implement full JSON parsing using RapidJSON
-        // For now, this serves as a placeholder. The actual implementation
-        // should use the RapidJSON library available in third_party/rapidjson/
-        // 
-        // Example integration:
-        //   #include "rapidjson/document.h"
-        //   rapidjson::Document doc;
-        //   doc.Parse(content.c_str());
-        //   if (!doc.HasParseError() && doc.HasMember("games")) {
-        //       // Parse games object...
-        //   }
+        // Parse JSON using RapidJSON
+        rapidjson::Document doc;
+        rapidjson::ParseResult parseResult = doc.Parse(content.c_str());
         
-        fprintf(stderr, "pyroveil: [AutoDetect] INFO: JSON parsing not yet implemented, using fallback\n");
+        if (!parseResult) {
+            fprintf(stderr, "pyroveil: [AutoDetect] ERROR: JSON parse error: %s (offset %zu)\n",
+                    rapidjson::GetParseError_En(parseResult.Code()),
+                    parseResult.Offset());
+            return games;
+        }
+        
+        // Validate document structure
+        if (!doc.IsObject() || !doc.HasMember("games")) {
+            fprintf(stderr, "pyroveil: [AutoDetect] WARNING: Invalid database format (missing 'games' object)\n");
+            return games;
+        }
+        
+        const rapidjson::Value& gamesObj = doc["games"];
+        if (!gamesObj.IsObject()) {
+            fprintf(stderr, "pyroveil: [AutoDetect] WARNING: 'games' field is not an object\n");
+            return games;
+        }
+        
+        // Iterate through all games in the database
+        for (auto it = gamesObj.MemberBegin(); it != gamesObj.MemberEnd(); ++it) {
+            std::string appId = it->name.GetString();
+            const rapidjson::Value& gameData = it->value;
+            
+            if (!gameData.IsObject()) {
+                continue; // Skip invalid entries
+            }
+            
+            GameInfo info;
+            
+            // Extract game name
+            if (gameData.HasMember("name") && gameData["name"].IsString()) {
+                info.name = gameData["name"].GetString();
+            }
+            
+            // Extract config path (required field)
+            if (gameData.HasMember("config") && gameData["config"].IsString()) {
+                info.config = gameData["config"].GetString();
+            } else {
+                continue; // Skip games without config path
+            }
+            
+            // Extract Steam AppID
+            if (gameData.HasMember("steam_appid")) {
+                if (gameData["steam_appid"].IsString()) {
+                    info.steamAppId = gameData["steam_appid"].GetString();
+                } else if (gameData["steam_appid"].IsNull()) {
+                    info.steamAppId = ""; // No Steam AppID
+                }
+            }
+            
+            // Extract process names array
+            if (gameData.HasMember("process_names") && gameData["process_names"].IsArray()) {
+                const rapidjson::Value& processNames = gameData["process_names"];
+                for (rapidjson::SizeType i = 0; i < processNames.Size(); ++i) {
+                    if (processNames[i].IsString()) {
+                        info.processNames.push_back(processNames[i].GetString());
+                    }
+                }
+            }
+            
+            // Extract criticality flags
+            if (gameData.HasMember("required") && gameData["required"].IsBool()) {
+                info.required = gameData["required"].GetBool();
+            } else {
+                info.required = false; // Default to optional
+            }
+            
+            if (gameData.HasMember("severity") && gameData["severity"].IsString()) {
+                info.severity = gameData["severity"].GetString();
+            } else {
+                info.severity = "medium"; // Default severity
+            }
+            
+            if (gameData.HasMember("description") && gameData["description"].IsString()) {
+                info.description = gameData["description"].GetString();
+            }
+            
+            // Add to map using AppID as key
+            games[appId] = info;
+        }
+        
+        fprintf(stderr, "pyroveil: [AutoDetect] INFO: Loaded %zu games from database\n", games.size());
         
         return games;
     }
@@ -120,8 +216,10 @@ public:
  * We check them in priority order:
  * 1. SteamAppId - Primary variable set by Steam
  * 2. STEAM_COMPAT_APP_ID - Set by Proton for compatibility layer
- * 3. SteamGameId - Legacy variable (some older games)
- * 4. Parent process environment - Fallback check
+ * 3. PRESSURE_VESSEL_APP_ID - Set by Flatpak Steam (pressure-vessel runtime)
+ * 4. SteamGameId - Legacy variable (some older games)
+ * 5. STEAM_RUNTIME_CONTAINER_APP_ID - Alternative Flatpak variable
+ * 6. Parent process environment - Fallback check
  * 
  * @return Steam AppID as string, or empty string if not found
  */
@@ -129,23 +227,39 @@ static std::string getSteamAppId() {
     // Priority 1: SteamAppId (most common)
     const char* appId = getenv("SteamAppId");
     if (appId && strlen(appId) > 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] AppID detected from SteamAppId: %s\n", appId);
         return std::string(appId);
     }
     
     // Priority 2: STEAM_COMPAT_APP_ID (Proton compatibility)
     appId = getenv("STEAM_COMPAT_APP_ID");
     if (appId && strlen(appId) > 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] AppID detected from STEAM_COMPAT_APP_ID: %s\n", appId);
         return std::string(appId);
     }
     
-    // Priority 3: SteamGameId (legacy)
+    // Priority 3: PRESSURE_VESSEL_APP_ID (Flatpak Steam)
+    appId = getenv("PRESSURE_VESSEL_APP_ID");
+    if (appId && strlen(appId) > 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] AppID detected from PRESSURE_VESSEL_APP_ID (Flatpak): %s\n", appId);
+        return std::string(appId);
+    }
     
+    // Priority 4: SteamGameId (legacy)
     appId = getenv("SteamGameId");
     if (appId && strlen(appId) > 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] AppID detected from SteamGameId (legacy): %s\n", appId);
         return std::string(appId);
     }
     
-    // Priority 4: Parent process environment (fallback)
+    // Priority 5: STEAM_RUNTIME_CONTAINER_APP_ID (alternative Flatpak)
+    appId = getenv("STEAM_RUNTIME_CONTAINER_APP_ID");
+    if (appId && strlen(appId) > 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] AppID detected from STEAM_RUNTIME_CONTAINER_APP_ID: %s\n", appId);
+        return std::string(appId);
+    }
+    
+    // Priority 6: Parent process environment (fallback)
     // Some launchers don't propagate environment variables to the game process,
     // so we check the parent process's environment as a last resort
     pid_t ppid = getppid();
@@ -157,12 +271,27 @@ static std::string getSteamAppId() {
         std::string line;
         // /proc/*/environ uses null bytes as separators
         while (std::getline(envFile, line, '\0')) {
-            if (line.find("SteamAppId=") == 0) {
-                return line.substr(11); // Skip "SteamAppId=" prefix
+            // Check all known AppID variables
+            const char* prefixes[] = {
+                "SteamAppId=",
+                "STEAM_COMPAT_APP_ID=",
+                "PRESSURE_VESSEL_APP_ID=",
+                "SteamGameId="
+            };
+            
+            for (const char* prefix : prefixes) {
+                size_t prefixLen = strlen(prefix);
+                if (line.find(prefix) == 0 && line.length() > prefixLen) {
+                    std::string detectedAppId = line.substr(prefixLen);
+                    fprintf(stderr, "pyroveil: [AutoDetect] AppID detected from parent process (%s): %s\n",
+                            prefix, detectedAppId.c_str());
+                    return detectedAppId;
+                }
             }
         }
     }
     
+    fprintf(stderr, "pyroveil: [AutoDetect] No Steam AppID detected in environment\n");
     return ""; // No AppID found
 }
 
@@ -216,13 +345,17 @@ static std::string getExecutablePath() {
  * 
  * Searches for the PyroVeil configuration directory in the following order:
  * 1. PYROVEIL_CONFIG_BASE environment variable (user override)
- * 2. $HOME/.local/share/pyroveil/hacks (user installation)
- * 3. /usr/share/pyroveil/hacks (system-wide installation)
+ * 2. $HOME/.local/share/pyroveil/hacks (user installation - native)
+ * 3. $HOME/.var/app/com.valvesoftware.Steam/.local/share/pyroveil/hacks (Flatpak Steam)
+ * 4. /usr/share/pyroveil/hacks (system-wide installation)
+ * 5. /app/share/pyroveil/hacks (Flatpak system path)
+ * 
+ * This function checks for read access (R_OK) to ensure the directory
+ * is actually usable before returning it.
  * 
  * @return Absolute path to configuration base directory, or empty on failure
  * 
- * @note This function checks for read access (R_OK) to ensure the directory
- *       is actually usable before returning it
+ * @note Flatpak detection is automatic - checks for /.flatpak-info file
  */
 static std::string getConfigBasePath() {
     // Priority 1: User-specified override
@@ -230,28 +363,60 @@ static std::string getConfigBasePath() {
     if (configBase && strlen(configBase) > 0) {
         // Validate that the path exists and is readable
         if (access(configBase, R_OK) == 0) {
+            fprintf(stderr, "pyroveil: [AutoDetect] Using PYROVEIL_CONFIG_BASE: %s\n", configBase);
             return std::string(configBase);
         }
         fprintf(stderr, "pyroveil: [AutoDetect] WARNING: PYROVEIL_CONFIG_BASE set but not accessible: %s\n",
                 configBase);
     }
     
-    // Priority 2: User installation directory
     const char* home = getenv("HOME");
-    if (home && strlen(home) > 0) {
-        std::string userPath = std::string(home) + "/.local/share/pyroveil/hacks";
-        if (access(userPath.c_str(), R_OK) == 0) {
-            return userPath;
-        }
+    if (!home || strlen(home) == 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] WARNING: HOME environment variable not set\n");
+        return "";
     }
     
-    // Priority 3: System-wide installation directory
+    // Check if running inside Flatpak container
+    bool isFlatpak = (access("/.flatpak-info", R_OK) == 0);
+    
+    // Priority 2: User installation directory (native/toolbox/distrobox)
+    std::string userPath = std::string(home) + "/.local/share/pyroveil/hacks";
+    if (access(userPath.c_str(), R_OK) == 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] Found config base at: %s\n", userPath.c_str());
+        return userPath;
+    }
+    
+    // Priority 3: Flatpak Steam user directory
+    std::string flatpakPath = std::string(home) + "/.var/app/com.valvesoftware.Steam/.local/share/pyroveil/hacks";
+    if (access(flatpakPath.c_str(), R_OK) == 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] Found config base at Flatpak path: %s\n", flatpakPath.c_str());
+        return flatpakPath;
+    }
+    
+    // Priority 4: System-wide installation directory
     const char* systemPath = "/usr/share/pyroveil/hacks";
     if (access(systemPath, R_OK) == 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] Found config base at system path: %s\n", systemPath);
         return systemPath;
     }
     
+    // Priority 5: Flatpak system path
+    const char* flatpakSystemPath = "/app/share/pyroveil/hacks";
+    if (isFlatpak && access(flatpakSystemPath, R_OK) == 0) {
+        fprintf(stderr, "pyroveil: [AutoDetect] Found config base at Flatpak system path: %s\n", flatpakSystemPath);
+        return flatpakSystemPath;
+    }
+    
     // No valid configuration directory found
+    fprintf(stderr, "pyroveil: [AutoDetect] ERROR: No configuration directory found!\n");
+    fprintf(stderr, "pyroveil: [AutoDetect] Tried paths:\n");
+    fprintf(stderr, "pyroveil: [AutoDetect]   - %s\n", userPath.c_str());
+    fprintf(stderr, "pyroveil: [AutoDetect]   - %s\n", flatpakPath.c_str());
+    fprintf(stderr, "pyroveil: [AutoDetect]   - %s\n", systemPath);
+    if (isFlatpak) {
+        fprintf(stderr, "pyroveil: [AutoDetect]   - %s\n", flatpakSystemPath);
+    }
+    
     return "";
 }
 

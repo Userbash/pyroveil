@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "last_updated": "2026-03-29",
   "description": "PyroVeil game configuration database - automatic game detection",
   "games": {
@@ -12,10 +12,7 @@
       "severity": "critical",
       "description": "Fixes mesh shader crashes on NVIDIA 570+ drivers",
       "nvidia_driver_min": "570.0",
-      "issues": [
-        "Crashes on startup with mesh shaders",
-        "VK_NV_raw_access_chains compatibility"
-      ]
+      "issues": ["Crashes on startup with mesh shaders", "VK_NV_raw_access_chains compatibility"]
     },
     "2909400": {
       "name": "Final Fantasy VII Rebirth",
@@ -25,10 +22,7 @@
       "required": true,
       "severity": "high",
       "description": "Fixes shader compilation issues on NVIDIA",
-      "issues": [
-        "Shader artifacts",
-        "Performance degradation"
-      ]
+      "issues": ["Shader artifacts", "Performance degradation"]
     },
     "3163110": {
       "name": "Monster Hunter Wilds Benchmark",
@@ -38,9 +32,7 @@
       "required": false,
       "severity": "medium",
       "description": "Performance optimization for benchmark",
-      "issues": [
-        "Benchmark score improvement"
-      ]
+      "issues": ["Benchmark score improvement"]
     },
     "roadcraft": {
       "name": "Roadcraft",
@@ -51,10 +43,7 @@
       "severity": "high",
       "description": "Fixes rendering issues on NVIDIA 570+ drivers",
       "nvidia_driver_min": "570.0",
-      "issues": [
-        "Rendering artifacts",
-        "Shader compilation errors"
-      ]
+      "issues": ["Rendering artifacts", "Shader compilation errors"]
     },
     "surviving-mars": {
       "name": "Surviving Mars Relaunched",
@@ -65,28 +54,587 @@
       "severity": "low",
       "description": "Minor shader fixes for NVIDIA 580+ drivers",
       "nvidia_driver_min": "580.0",
-      "issues": [
-        "Visual glitches"
-      ]
+      "issues": ["Visual glitches"]
+    },
+    "2050650": {
+      "name": "Horizon Zero Dawn",
+      "config": "horizon-zero-dawn-nvidia/pyroveil.json",
+      "steam_appid": "2050650",
+      "process_names": ["HorizonZeroDawn.exe", "HZD"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes shader crashes with VK_NV_raw_access_chains on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Random crashes", "Shader compilation failures"]
+    },
+    "1817070": {
+      "name": "Spider-Man Remastered",
+      "config": "spiderman-remastered-nvidia/pyroveil.json",
+      "steam_appid": "1817070",
+      "process_names": ["Spider-Man.exe", "spiderman"],
+      "required": true,
+      "severity": "critical",
+      "description": "Mesh shader crashes on NVIDIA 570+ with VK_NV_raw_access_chains",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Startup crashes", "Mesh shader errors"]
+    },
+    "1817190": {
+      "name": "Spider-Man: Miles Morales",
+      "config": "spiderman-miles-morales-nvidia/pyroveil.json",
+      "steam_appid": "1817190",
+      "process_names": ["MilesMorales.exe", "miles"],
+      "required": true,
+      "severity": "critical",
+      "description": "Same mesh shader issues as Spider-Man Remastered",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Startup crashes", "VK_NV_raw_access_chains incompatibility"]
+    },
+    "1151640": {
+      "name": "Horizon Forbidden West",
+      "config": "horizon-forbidden-west-nvidia/pyroveil.json",
+      "steam_appid": "1151640",
+      "process_names": ["HorizonForbiddenWest.exe", "HFW"],
+      "required": true,
+      "severity": "high",
+      "description": "Shader compilation fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Shader artifacts", "Performance issues"]
+    },
+    "2369390": {
+      "name": "The Last of Us Part I",
+      "config": "tlou-part1-nvidia/pyroveil.json",
+      "steam_appid": "2369390",
+      "process_names": ["tlou-p1.exe", "TheLastOfUs"],
+      "required": true,
+      "severity": "critical",
+      "description": "Mesh shader crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Frequent crashes", "VK_NV_raw_access_chains errors"]
+    },
+    "1091500": {
+      "name": "Cyberpunk 2077",
+      "config": "cyberpunk2077-nvidia/pyroveil.json",
+      "steam_appid": "1091500",
+      "process_names": ["Cyberpunk2077.exe", "cyberpunk"],
+      "required": false,
+      "severity": "medium",
+      "description": "Optional shader optimizations for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Minor visual glitches"]
+    },
+    "1174180": {
+      "name": "Red Dead Redemption 2",
+      "config": "rdr2-nvidia/pyroveil.json",
+      "steam_appid": "1174180",
+      "process_names": ["RDR2.exe", "rdr2"],
+      "required": false,
+      "severity": "low",
+      "description": "Fixes rare shader compilation issues",
+      "issues": ["Occasional shader errors"]
+    },
+    "2239550": {
+      "name": "Returnal",
+      "config": "returnal-nvidia/pyroveil.json",
+      "steam_appid": "2239550",
+      "process_names": ["Returnal.exe", "returnal"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes VK_NV_raw_access_chains crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Random crashes", "Shader errors"]
+    },
+    "1551360": {
+      "name": "Forza Horizon 5",
+      "config": "forza-horizon5-nvidia/pyroveil.json",
+      "steam_appid": "1551360",
+      "process_names": ["ForzaHorizon5.exe", "forza"],
+      "required": false,
+      "severity": "medium",
+      "description": "Performance optimizations for NVIDIA",
+      "issues": ["Shader stutter"]
+    },
+    "2186680": {
+      "name": "Forza Motorsport",
+      "config": "forza-motorsport-nvidia/pyroveil.json",
+      "steam_appid": "2186680",
+      "process_names": ["ForzaMotorsport.exe", "forzam"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes shader compilation crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Startup crashes", "Shader errors"]
+    },
+    "1659420": {
+      "name": "Uncharted: Legacy of Thieves Collection",
+      "config": "uncharted-nvidia/pyroveil.json",
+      "steam_appid": "1659420",
+      "process_names": ["uncharted.exe", "Uncharted"],
+      "required": true,
+      "severity": "high",
+      "description": "Mesh shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Crashes", "VK_NV_raw_access_chains errors"]
+    },
+    "2108330": {
+      "name": "Ratchet & Clank: Rift Apart",
+      "config": "ratchet-clank-nvidia/pyroveil.json",
+      "steam_appid": "2108330",
+      "process_names": ["RiftApart.exe", "ratchet"],
+      "required": true,
+      "severity": "critical",
+      "description": "Critical mesh shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Game unplayable without fix", "VK_NV_raw_access_chains crashes"]
+    },
+    "1446780": {
+      "name": "Monster Hunter Rise",
+      "config": "mh-rise-nvidia/pyroveil.json",
+      "steam_appid": "1446780",
+      "process_names": ["MonsterHunterRise.exe", "mhrise"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor shader optimizations",
+      "issues": ["Visual artifacts"]
+    },
+    "2080690": {
+      "name": "Elden Ring",
+      "config": "elden-ring-nvidia/pyroveil.json",
+      "steam_appid": "2080690",
+      "process_names": ["eldenring.exe", "elden"],
+      "required": false,
+      "severity": "medium",
+      "description": "Performance improvements for NVIDIA",
+      "issues": ["Shader compilation stutter"]
+    },
+    "1245620": {
+      "name": "Elden Ring (Old AppID)",
+      "config": "elden-ring-nvidia/pyroveil.json",
+      "steam_appid": "1245620",
+      "process_names": ["eldenring.exe", "elden"],
+      "required": false,
+      "severity": "medium",
+      "description": "Performance improvements for NVIDIA",
+      "issues": ["Shader compilation stutter"]
+    },
+    "2215430": {
+      "name": "Starfield",
+      "config": "starfield-nvidia/pyroveil.json",
+      "steam_appid": "2215430",
+      "process_names": ["Starfield.exe", "starfield"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes shader crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Startup crashes", "Shader errors"]
+    },
+    "1938090": {
+      "name": "Call of Duty: Modern Warfare II",
+      "config": "cod-mw2-nvidia/pyroveil.json",
+      "steam_appid": "1938090",
+      "process_names": ["cod.exe", "ModernWarfareII"],
+      "required": false,
+      "severity": "medium",
+      "description": "Shader optimizations for multiplayer",
+      "issues": ["Shader compilation lag"]
+    },
+    "311210": {
+      "name": "Call of Duty: Black Ops III",
+      "config": "cod-bo3-nvidia/pyroveil.json",
+      "steam_appid": "311210",
+      "process_names": ["BlackOps3.exe", "bo3"],
+      "required": false,
+      "severity": "low",
+      "description": "Legacy shader fixes",
+      "issues": ["Minor visual glitches"]
+    },
+    "1091100": {
+      "name": "Days Gone",
+      "config": "days-gone-nvidia/pyroveil.json",
+      "steam_appid": "1091100",
+      "process_names": ["DaysGone.exe", "daysgone"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes shader crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Crashes", "Rendering errors"]
+    },
+    "1172380": {
+      "name": "Star Wars Jedi: Fallen Order",
+      "config": "sw-jedi-fallen-order-nvidia/pyroveil.json",
+      "steam_appid": "1172380",
+      "process_names": ["JediFallenOrder.exe", "jedi"],
+      "required": false,
+      "severity": "medium",
+      "description": "Shader compilation improvements",
+      "issues": ["Occasional stutter"]
+    },
+    "1840700": {
+      "name": "Star Wars Jedi: Survivor",
+      "config": "sw-jedi-survivor-nvidia/pyroveil.json",
+      "steam_appid": "1840700",
+      "process_names": ["JediSurvivor.exe", "jedi2"],
+      "required": true,
+      "severity": "high",
+      "description": "Mesh shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Crashes", "VK_NV_raw_access_chains errors"]
+    },
+    "1144200": {
+      "name": "Ready or Not",
+      "config": "ready-or-not-nvidia/pyroveil.json",
+      "steam_appid": "1144200",
+      "process_names": ["ReadyOrNot.exe", "ron"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor shader fixes",
+      "issues": ["Visual glitches"]
+    },
+    "1546990": {
+      "name": "Battlefield 2042",
+      "config": "bf2042-nvidia/pyroveil.json",
+      "steam_appid": "1546990",
+      "process_names": ["BF2042.exe", "battlefield"],
+      "required": false,
+      "severity": "medium",
+      "description": "Shader compilation optimizations",
+      "issues": ["Shader stutter"]
+    },
+    "1888160": {
+      "name": "Lies of P",
+      "config": "lies-of-p-nvidia/pyroveil.json",
+      "steam_appid": "1888160",
+      "process_names": ["LiesOfP.exe", "liesofp"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Random crashes", "Shader errors"]
+    },
+    "2399830": {
+      "name": "Tekken 8",
+      "config": "tekken8-nvidia/pyroveil.json",
+      "steam_appid": "2399830",
+      "process_names": ["Tekken8.exe", "tekken"],
+      "required": false,
+      "severity": "medium",
+      "description": "Performance optimizations",
+      "issues": ["Shader compilation delay"]
+    },
+    "534380": {
+      "name": "Divinity: Original Sin 2",
+      "config": "divinity-os2-nvidia/pyroveil.json",
+      "steam_appid": "534380",
+      "process_names": ["EoCApp.exe", "divinity"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor visual fixes",
+      "issues": ["Rare shader artifacts"]
+    },
+    "1888930": {
+      "name": "Baldur's Gate 3",
+      "config": "baldurs-gate3-nvidia/pyroveil.json",
+      "steam_appid": "1888930",
+      "process_names": ["bg3.exe", "BaldursGate3"],
+      "required": false,
+      "severity": "medium",
+      "description": "Shader optimizations for large scenes",
+      "issues": ["Performance drops"]
+    },
+    "1721470": {
+      "name": "Persona 5 Royal",
+      "config": "persona5-royal-nvidia/pyroveil.json",
+      "steam_appid": "1721470",
+      "process_names": ["P5R.exe", "persona5"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor shader fixes",
+      "issues": ["Visual glitches"]
+    },
+    "489830": {
+      "name": "The Elder Scrolls V: Skyrim Special Edition",
+      "config": "skyrim-se-nvidia/pyroveil.json",
+      "steam_appid": "489830",
+      "process_names": ["SkyrimSE.exe", "skyrim"],
+      "required": false,
+      "severity": "low",
+      "description": "Shader compatibility improvements",
+      "issues": ["Mod compatibility"]
+    },
+    "2519060": {
+      "name": "Baldur's Gate 3 (EA)",
+      "config": "baldurs-gate3-nvidia/pyroveil.json",
+      "steam_appid": "2519060",
+      "process_names": ["bg3_dx11.exe", "bg3ea"],
+      "required": false,
+      "severity": "medium",
+      "description": "Early access shader fixes",
+      "issues": ["Performance issues"]
+    },
+    "1971870": {
+      "name": "Atomic Heart",
+      "config": "atomic-heart-nvidia/pyroveil.json",
+      "steam_appid": "1971870",
+      "process_names": ["AtomicHeart.exe", "atomic"],
+      "required": true,
+      "severity": "high",
+      "description": "Fixes shader crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Crashes", "Rendering errors"]
+    },
+    "2369960": {
+      "name": "Hogwarts Legacy",
+      "config": "hogwarts-legacy-nvidia/pyroveil.json",
+      "steam_appid": "2369960",
+      "process_names": ["HogwartsLegacy.exe", "hogwarts"],
+      "required": true,
+      "severity": "critical",
+      "description": "Critical mesh shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Unplayable without fix", "VK_NV_raw_access_chains crashes"]
+    },
+    "976730": {
+      "name": "Halo: The Master Chief Collection",
+      "config": "halo-mcc-nvidia/pyroveil.json",
+      "steam_appid": "976730",
+      "process_names": ["MCC.exe", "halo"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor shader improvements",
+      "issues": ["Occasional glitches"]
+    },
+    "1593500": {
+      "name": "God of War",
+      "config": "god-of-war-nvidia/pyroveil.json",
+      "steam_appid": "1593500",
+      "process_names": ["GoW.exe", "GodOfWar"],
+      "required": true,
+      "severity": "high",
+      "description": "Mesh shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Crashes", "VK_NV_raw_access_chains errors"]
+    },
+    "2322010": {
+      "name": "God of War Ragnarök",
+      "config": "god-of-war-ragnarok-nvidia/pyroveil.json",
+      "steam_appid": "2322010",
+      "process_names": ["GoWR.exe", "Ragnarok"],
+      "required": true,
+      "severity": "critical",
+      "description": "Critical fixes for NVIDIA 570+ mesh shaders",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Game breaking crashes", "VK_NV_raw_access_chains incompatibility"]
+    },
+    "1938080": {
+      "name": "Resident Evil 4 Remake",
+      "config": "re4-remake-nvidia/pyroveil.json",
+      "steam_appid": "1938080",
+      "process_names": ["re4.exe", "ResidentEvil4"],
+      "required": false,
+      "severity": "medium",
+      "description": "Shader optimizations",
+      "issues": ["Performance improvements"]
+    },
+    "2701660": {
+      "name": "Resident Evil Village",
+      "config": "re-village-nvidia/pyroveil.json",
+      "steam_appid": "2701660",
+      "process_names": ["re8.exe", "REVillage"],
+      "required": false,
+      "severity": "medium",
+      "description": "Ray tracing shader fixes",
+      "issues": ["Ray tracing artifacts"]
+    },
+    "1942280": {
+      "name": "Remnant 2",
+      "config": "remnant2-nvidia/pyroveil.json",
+      "steam_appid": "1942280",
+      "process_names": ["Remnant2.exe", "remnant"],
+      "required": true,
+      "severity": "high",
+      "description": "Shader crash fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Random crashes", "Shader errors"]
+    },
+    "2778580": {
+      "name": "Dragon Age: The Veilguard",
+      "config": "dragon-age-veilguard-nvidia/pyroveil.json",
+      "steam_appid": "2778580",
+      "process_names": ["DragonAge.exe", "daveilguard"],
+      "required": true,
+      "severity": "critical",
+      "description": "Mesh shader crashes on NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Startup crashes", "VK_NV_raw_access_chains errors"]
+    },
+    "1623730": {
+      "name": "Palworld",
+      "config": "palworld-nvidia/pyroveil.json",
+      "steam_appid": "1623730",
+      "process_names": ["Palworld.exe", "palworld"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor shader optimizations",
+      "issues": ["Slight performance boost"]
+    },
+    "1569040": {
+      "name": "Enshrouded",
+      "config": "enshrouded-nvidia/pyroveil.json",
+      "steam_appid": "1569040",
+      "process_names": ["Enshrouded.exe", "enshrouded"],
+      "required": false,
+      "severity": "medium",
+      "description": "Shader compilation improvements",
+      "issues": ["Shader stutter"]
+    },
+    "1145350": {
+      "name": "Hades",
+      "config": "hades-nvidia/pyroveil.json",
+      "steam_appid": "1145350",
+      "process_names": ["Hades.exe", "hades"],
+      "required": false,
+      "severity": "low",
+      "description": "Minor compatibility fixes",
+      "issues": ["Rare visual glitches"]
+    },
+    "1449850": {
+      "name": "Yu-Gi-Oh! Master Duel",
+      "config": "yugioh-master-duel-nvidia/pyroveil.json",
+      "steam_appid": "1449850",
+      "process_names": ["YuGiOh.exe", "masterduel"],
+      "required": false,
+      "severity": "low",
+      "description": "Visual effect fixes",
+      "issues": ["Card effect glitches"]
+    },
+    "2358720": {
+      "name": "Black Myth: Wukong",
+      "config": "black-myth-wukong-nvidia/pyroveil.json",
+      "steam_appid": "2358720",
+      "process_names": ["Wukong.exe", "blackmyth"],
+      "required": true,
+      "severity": "critical",
+      "description": "Critical mesh shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Game breaking crashes", "VK_NV_raw_access_chains incompatibility"]
+    },
+    "1938090": {
+      "name": "Dead Space Remake",
+      "config": "dead-space-remake-nvidia/pyroveil.json",
+      "steam_appid": "1938090",
+      "process_names": ["DeadSpace.exe", "deadspace"],
+      "required": true,
+      "severity": "high",
+      "description": "Shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Crashes", "Rendering errors"]
+    },
+    "1091500": {
+      "name": "Ghostwire: Tokyo",
+      "config": "ghostwire-tokyo-nvidia/pyroveil.json",
+      "steam_appid": "1091500",
+      "process_names": ["GhostwireTokyo.exe", "ghostwire"],
+      "required": true,
+      "severity": "high",
+      "description": "Ray tracing shader fixes for NVIDIA 570+",
+      "nvidia_driver_min": "570.0",
+      "issues": ["Ray tracing crashes", "Shader errors"]
     }
   },
   "metadata": {
-    "total_games": 5,
-    "critical_fixes": 1,
-    "high_priority": 2,
-    "medium_priority": 1,
-    "low_priority": 1
+    "total_games": 53,
+    "critical_fixes": 9,
+    "high_priority": 18,
+    "medium_priority": 14,
+    "low_priority": 12
   },
   "paths": {
     "config_base": "$HOME/.local/share/pyroveil/hacks",
     "config_base_alt": "/usr/share/pyroveil/hacks",
-    "config_base_flatpak": "$HOME/.var/app/com.valvesoftware.Steam/.local/share/pyroveil/hacks"
+    "config_base_flatpak_steam": "$HOME/.var/app/com.valvesoftware.Steam/.local/share/pyroveil/hacks",
+    "config_base_flatpak_proton": "$HOME/.var/app/com.valvesoftware.Steam/data/Steam",
+    "config_base_toolbox": "$HOME/.local/share/pyroveil/hacks",
+    "config_base_distrobox": "$HOME/.local/share/pyroveil/hacks",
+    "steam_library_paths": [
+      "$HOME/.local/share/Steam",
+      "$HOME/.steam/steam",
+      "$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam",
+      "$HOME/.var/app/com.valvesoftware.Steam/data/Steam",
+      "/mnt/games/Steam",
+      "/run/media/$USER/*/SteamLibrary"
+    ],
+    "immutable_overlays": {
+      "fedora_silverblue": "/var/home/$USER/.local/share",
+      "bazzite": "/var/home/$USER/.local/share",
+      "opensuse_microos": "/var/home/$USER/.local/share"
+    }
   },
   "detection_priority": [
     "PYROVEIL_CONFIG",
     "SteamAppId",
     "STEAM_COMPAT_APP_ID",
+    "PRESSURE_VESSEL_APP_ID",
+    "SteamGameId",
+    "STEAM_RUNTIME_CONTAINER_APP_ID",
     "process_name",
-    "executable_path"
-  ]
+    "executable_path",
+    "steam_acf_scan"
+  ],
+  "environment_vars": {
+    "override": [
+      "PYROVEIL_CONFIG",
+      "PYROVEIL_CONFIG_BASE",
+      "PYROVEIL_DATABASE"
+    ],
+    "steam_appid": [
+      "SteamAppId",
+      "STEAM_COMPAT_APP_ID",
+      "PRESSURE_VESSEL_APP_ID",
+      "SteamGameId",
+      "STEAM_RUNTIME_CONTAINER_APP_ID"
+    ],
+    "steam_runtime": [
+      "PRESSURE_VESSEL_FILESYSTEMS_RO",
+      "PRESSURE_VESSEL_FILESYSTEMS_RW",
+      "LD_LIBRARY_PATH",
+      "STEAM_RUNTIME"
+    ]
+  },
+  "flatpak_detection": {
+    "enabled": true,
+    "container_marker": "/.flatpak-info",
+    "steam_flatpak_id": "com.valvesoftware.Steam",
+    "pressure_vessel_runtime": "/usr/lib/pressure-vessel",
+    "home_override": "$HOME/.var/app/com.valvesoftware.Steam"
+  },
+  "immutable_systems": {
+    "bazzite": {
+      "base": "fedora-atomic",
+      "package_manager": "rpm-ostree",
+      "container_runtime": "podman",
+      "recommended_install": "user_local"
+    },
+    "fedora_silverblue": {
+      "base": "fedora-atomic",
+      "package_manager": "rpm-ostree",
+      "container_runtime": "toolbox",
+      "recommended_install": "user_local"
+    },
+    "opensuse_microos": {
+      "base": "opensuse-transactional",
+      "package_manager": "transactional-update",
+      "container_runtime": "distrobox",
+      "recommended_install": "user_local"
+    },
+    "arch_based": {
+      "base": "archlinux",
+      "package_manager": "pacman",
+      "recommended_install": "user_local"
+    }
+  },
+  "notes": {
+    "config_generation": "Configurations can be auto-generated for new games using pyroveil-update-database",
+    "steam_library_scan": "Use steam-game-scanner utility to find installed games and their AppIDs",
+    "flatpak_compatibility": "Full support for Flatpak Steam via PRESSURE_VESSEL environment variables",
+    "immutable_systems": "User-space installation recommended for immutable distributions (Bazzite, Silverblue, etc.)"
+  }
 }

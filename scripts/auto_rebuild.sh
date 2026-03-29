@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Pyroveil Universal Rebuild Script
 # Updates the Pyroveil source code and rebuilds the layer for the user environment.
 set -Eeuo pipefail

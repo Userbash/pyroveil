@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Pyroveil Universal Installer Script
 # Installs Pyroveil Vulkan layer in user environment and sets VK_LAYER_PATH globally.
 set -Eeuo pipefail

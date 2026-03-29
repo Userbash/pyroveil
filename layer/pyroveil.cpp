@@ -31,6 +31,16 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
 VK_LAYER_PYROVEIL_vkGetInstanceProcAddr(VkInstance instance, const char *pName);
 }
 
+/**
+ * @brief Fast stack-based allocator for temporary data structures
+ * 
+ * ScratchAllocator provides efficient memory allocation for short-lived objects
+ * during shader interception and modification. It uses a small inline buffer
+ * (1024 bytes) for quick allocations, falling back to heap allocation when needed.
+ * 
+ * Memory is never freed individually - the entire allocator is destroyed when
+ * the scope ends, making it ideal for temporary copies of Vulkan structures.
+ */
 struct ScratchAllocator
 {
 	void *copyRaw(const void *data, size_t size);
@@ -84,12 +94,33 @@ void *ScratchAllocator::copyRaw(const void *data, size_t size)
 	return ptr;
 }
 
+/**
+ * @brief Shader modification action to perform when a match is found
+ * 
+ * Defines what transformation should be applied to a shader that matches
+ * the configured criteria. Currently supports GLSL roundtrip (converting
+ * SPIR-V -> GLSL -> SPIR-V) to work around driver compiler bugs.
+ */
 struct Action
 {
-	Hash hash = 0;
-	bool glslRoundtrip = false;
+	Hash hash = 0;                   ///< Cached hash of the modified shader
+	bool glslRoundtrip = false;      ///< Enable GLSL roundtrip compilation via SPIRV-Cross
 };
 
+/**
+ * @brief Per-instance state for the PyroVeil Vulkan layer
+ * 
+ * Instance manages configuration, shader match rules, and Vulkan instance-level
+ * dispatch tables. Each VkInstance gets its own Instance object that:
+ * 
+ * 1. Loads and parses the pyroveil.json configuration file
+ * 2. Maintains a list of shader matching rules (by hash, string, execution model)
+ * 3. Stores the list of disabled Vulkan extensions
+ * 4. Provides dispatch table for instance-level Vulkan calls
+ * 
+ * The configuration is loaded from PYROVEIL_CONFIG environment variable,
+ * falling back to "pyroveil.json" in the current directory.
+ */
 struct Instance
 {
 	void init(VkInstance instance_, const VkApplicationInfo *pApplicationInfo, PFN_vkGetInstanceProcAddr gpa_);
@@ -114,25 +145,56 @@ struct Instance
 	PFN_vkGetInstanceProcAddr gpa = nullptr;
 	std::string applicationName;
 	std::string engineName;
-	bool active = false;
+	bool active = false;                    ///< True if configuration was successfully loaded
 
 	void parseConfig(const rapidjson::Document &doc);
 
+	/**
+	 * @brief Shader matching rule for identifying shaders to modify
+	 * 
+	 * A Match can identify shaders by:
+	 * - fossilizeModuleHash: Exact hash match (64-bit)
+	 * - fossilizeModuleHashRange: Hash range [lo, hi] for multiple shaders
+	 * - opStringSearch: Substring search in SPIR-V OpString instructions
+	 * - spirvExecutionModel: Match by shader stage (vertex, fragment, compute, etc.)
+	 * 
+	 * Multiple criteria can be combined. When a shader matches, the associated
+	 * action is applied (e.g., GLSL roundtrip to fix driver bugs).
+	 */
 	struct Match
 	{
-		Hash fossilizeModuleHash = 0;
-		Hash fossilizeModuleHashLo = 0;
-		Hash fossilizeModuleHashHi = 0;
-		std::string opStringSearch;
-		spv::ExecutionModel spirvExecutionModel = spv::ExecutionModelMax;
-		Action action;
+		Hash fossilizeModuleHash = 0;       ///< Exact shader module hash to match
+		Hash fossilizeModuleHashLo = 0;     ///< Lower bound of hash range (inclusive)
+		Hash fossilizeModuleHashHi = 0;     ///< Upper bound of hash range (inclusive)
+		std::string opStringSearch;          ///< Search for this string in OpString instructions
+		spv::ExecutionModel spirvExecutionModel = spv::ExecutionModelMax; ///< Match shader stage
+		Action action;                       ///< Action to perform when this rule matches
 	};
-	std::vector<Match> globalMatches;
-	std::vector<std::string> disabledExtensions;
-	std::string roundtripCachePath;
-	std::string configPath;
+	std::vector<Match> globalMatches;         ///< List of all shader matching rules
+	std::vector<std::string> disabledExtensions; ///< Vulkan extensions to disable
+	std::string roundtripCachePath;          ///< Directory for caching roundtripped shaders
+	std::string configPath;                  ///< Absolute path to loaded config file
 };
 
+/**
+ * @brief Parse JSON configuration and populate shader matching rules
+ * 
+ * Expected JSON format:
+ * {
+ *   "version": 2,
+ *   "type": "pyroveil",
+ *   "matches": [
+ *     {
+ *       "fossilizeModuleHash": "0x1234567890abcdef",
+ *       "action": { "glsl-roundtrip": true }
+ *     }
+ *   ],
+ *   "disabledExtensions": ["VK_EXT_shader_object"],
+ *   "roundtripCache": "cache/"
+ * }
+ * 
+ * @param doc Parsed JSON document from pyroveil.json
+ */
 void Instance::parseConfig(const rapidjson::Document &doc)
 {
 	if (!doc.HasMember("version") || !doc["version"].IsInt() || doc["version"].GetUint() != 2)
@@ -288,6 +350,13 @@ void Instance::init(VkInstance instance_, const VkApplicationInfo *pApplicationI
 	}
 }
 
+/**
+ * @brief Known Vulkan structure sizes for safe pNext chain copying
+ * 
+ * This table maps VkStructureType enum values to their corresponding struct sizes.
+ * Used by copyPnextChain() to safely deep-copy pNext chains without buffer overflows.
+ * Only structures that appear in shader-related pNext chains are included.
+ */
 static const struct
 {
 	VkStructureType sType;
@@ -301,6 +370,19 @@ static const struct
 	{ VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT, sizeof(VkShaderModuleValidationCacheCreateInfoEXT) },
 };
 
+/**
+ * @brief Deep copy a Vulkan pNext chain using known structure sizes
+ * 
+ * Vulkan uses singly-linked pNext chains for extension structures. This function
+ * creates a deep copy of such a chain, allocating new memory for each node.
+ * 
+ * The function walks the chain backwards, building a new reversed chain to maintain
+ * the original order. Only structures in the structSizes table are supported.
+ * 
+ * @param pnext Pointer to the first structure in the pNext chain
+ * @param alloc Allocator for the new chain nodes
+ * @return Pointer to the first node of the copied chain, or nullptr if unknown struct found
+ */
 static const void *copyPnextChain(const void *pnext, ScratchAllocator &alloc)
 {
 	const VkBaseInStructure *newPnext = nullptr;
@@ -331,6 +413,19 @@ static const void *copyPnextChain(const void *pnext, ScratchAllocator &alloc)
 	return newPnext;
 }
 
+/**
+ * @brief Extract a null-terminated string from SPIR-V word array
+ * 
+ * SPIR-V stores strings (like OpString operands) as sequences of 32-bit words,
+ * packed in little-endian byte order. This function extracts such a string,
+ * stopping at the first null byte or end of array.
+ * 
+ * Example: words [0x6C6C6548, 0x0000216F] -> "Hello!"
+ * 
+ * @param pCode Pointer to SPIR-V words containing the string
+ * @param count Number of 32-bit words to read
+ * @return Extracted null-terminated string
+ */
 static std::string extractString(const uint32_t *pCode, uint32_t count)
 {
 	std::string ret;
@@ -350,6 +445,18 @@ static std::string extractString(const uint32_t *pCode, uint32_t count)
 	return ret;
 }
 
+/**
+ * @brief Compute Fossilize-compatible hash for a shader module
+ * 
+ * Calculates a 64-bit hash of the shader's SPIR-V bytecode and creation flags.
+ * The hash algorithm matches Fossilize's implementation, allowing direct
+ * comparison with fossilizeModuleHash values in configuration files.
+ * 
+ * Hash input: SPIR-V bytecode || createInfo.flags
+ * 
+ * @param createInfo Shader module creation info containing SPIR-V code
+ * @return 64-bit hash value compatible with Fossilize format
+ */
 static Hash computeHashShaderModule(const VkShaderModuleCreateInfo &createInfo)
 {
 	// Match Fossilize hash to make it easier to mess around.
@@ -359,6 +466,19 @@ static Hash computeHashShaderModule(const VkShaderModuleCreateInfo &createInfo)
 	return h.get();
 }
 
+/**
+ * @brief Per-device state for shader interception and modification
+ * 
+ * Device manages all operations related to shader interception for a specific
+ * VkDevice. It provides:
+ * 
+ * 1. Shader matching: Checks if a shader matches any configured rules
+ * 2. Shader override: Applies GLSL roundtrip or other modifications
+ * 3. Cache management: Stores and retrieves modified shaders to avoid recompilation
+ * 4. Pipeline interception: Intercepts vkCreateGraphicsPipelines and vkCreateComputePipelines
+ * 
+ * Each VkDevice gets its own Device object with a reference to the parent Instance.
+ */
 struct Device
 {
 	void init(VkPhysicalDevice gpu_, VkDevice device_, Instance *instance_, PFN_vkGetDeviceProcAddr gpa);

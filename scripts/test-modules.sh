@@ -260,10 +260,13 @@ test_vulkan_layer_module() {
     
     # Test 4: Check Vulkan exports
     print_test "Checking Vulkan API exports"
-    if nm -D "${layer_so}" 2>/dev/null | grep -q "vkGetInstanceProcAddr"; then
-        print_pass "vkGetInstanceProcAddr exported"
+    # Check for layer negotiate function (modern Vulkan layer interface)
+    # Force English locale to avoid localization issues
+    local symbol_output=$(LANG=C readelf --dyn-syms --wide "${layer_so}" 2>/dev/null | grep "Negotiate" || true)
+    if [[ -n "$symbol_output" ]]; then
+        print_pass "Vulkan layer exports found"
     else
-        print_fail "vkGetInstanceProcAddr not found"
+        print_fail "Vulkan layer exports not found"
     fi
     
     return 0
